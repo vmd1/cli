@@ -33,5 +33,6 @@ Inject what a module talks to (HTTP client, command runner) so tests need no net
 
 ## Release
 
-Tag `vX.Y.Z`: the Release workflow publishes `vmd1_linux_amd64`, `vmd1_linux_arm64` and `SHA256SUMS`. The tunnel-agent image downloads the
-release with a pinned checksum and provisioned servers copy the binary out of the image.
+Tag `vX.Y.Z`: the Release workflow publishes `vmd1_linux_amd64`, `vmd1_linux_arm64` and `SHA256SUMS` on a GitHub release, and a scratch image
+`registry.kmnet.uk/vmd1:<tag>` (and `:latest`) that the tunnel-agent provisioning script pulls and copies the binary out of. The workflow needs the
+repository secrets `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` (a `registry-admin` account).
