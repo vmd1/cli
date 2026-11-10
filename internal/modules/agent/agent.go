@@ -36,27 +36,36 @@ func execRunner(ctx context.Context, dir string, out, errw io.Writer, name strin
 }
 
 // Module builds the `agent` module. HTTP and Run are injectable for tests.
-func Module(httpc *http.Client, run Runner) cli.Module {
+func Module(httpc *http.Client, run Runner) cli.Module { return module(httpc, run, hostForward) }
+
+func module(httpc *http.Client, run Runner, forward func(routes []string) error) cli.Module {
 	if httpc == nil {
 		httpc = &http.Client{Timeout: 10 * time.Second}
 	}
 	if run == nil {
 		run = execRunner
 	}
-	a := &agent{http: httpc, run: run}
-	return cli.Module{Name: "agent", Summary: "the tunnel agent on this host: pathways, down, up", Commands: []cli.Command{
+	a := &agent{http: httpc, run: run, forward: forward}
+	return cli.Module{Name: "agent", Summary: "the tunnel agent on this host: pathways, exit node, routes, down, up", Commands: []cli.Command{
 		{Name: "path", Summary: "which pathway carries traffic", Commands: []cli.Command{
 			{Name: "list", Summary: "show every pathway, its state and which one is selected", Usage: "[--json]", Run: a.pathList},
 			{Name: "pick", Summary: "choose the pathway that carries new connections (\"default\" undoes it)", Usage: "<name|default>", Run: a.pathPick},
 		}},
+		{Name: "exit-node", Summary: "carry this host's internet traffic through another tailnet node (tailscale pathways)", Commands: []cli.Command{
+			{Name: "show", Summary: "the exit node and whether it is in use", Usage: "", Run: a.exitShow},
+			{Name: "set", Summary: "use this node as the exit node", Usage: "<node|ip>", Run: a.exitSet},
+			{Name: "clear", Summary: "stop using an exit node", Usage: "", Run: a.exitClear},
+		}},
+		{Name: "routes", Summary: "subnets this host advertises to the tailnet (tailscale pathways)", Commands: a.routesCommands()},
 		{Name: "down", Summary: "stop the agent (docker compose down; keeps its identity)", Usage: "", Run: a.down},
 		{Name: "up", Summary: "start the agent (docker compose up -d)", Usage: "", Run: a.up},
 	}}
 }
 
 type agent struct {
-	http *http.Client
-	run  Runner
+	http    *http.Client
+	run     Runner
+	forward func(routes []string) error // turns on IP forwarding on the host for advertised routes
 }
 
 type common struct{ url, dir string }
