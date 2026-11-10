@@ -6,6 +6,10 @@ One command-line tool for the homelab, built from modules. Today there is one, `
 vmd1 agent path list              # every pathway, its state, rtt, and which one carries new connections
 vmd1 agent path pick <name>       # make an active pathway carry new connections (persists across restarts)
 vmd1 agent path pick default      # back to the configured one (PREFERRED_PATHWAY, tailscale-wss)
+vmd1 agent exit-node set <node>   # tailscale pathways: send this host's internet traffic through a tailnet exit node
+vmd1 agent exit-node show|clear
+vmd1 agent routes set|add|remove <cidr>...   # advertise subnets to the tailnet (turns on IP forwarding; run as root)
+vmd1 agent routes list|clear
 vmd1 agent down                   # docker compose down for the tunnel agent (keeps its identity)
 vmd1 agent up                     # docker compose up -d
 vmd1 version | help [command]
