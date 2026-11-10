@@ -46,6 +46,12 @@ type UsageError struct{ Msg string }
 
 func (e UsageError) Error() string { return e.Msg }
 
+// ExitError ends the process with Code without printing anything: the command already reported its error itself (an embedded
+// tool such as nodectl). Code 0 is not an error.
+type ExitError struct{ Code int }
+
+func (e ExitError) Error() string { return fmt.Sprintf("exit status %d", e.Code) }
+
 // Run dispatches args (without the program name) and returns the process exit status.
 func (r *Root) Run(ctx context.Context, env *Env, args []string) int {
 	if len(args) == 0 || args[0] == "help" || args[0] == "-h" || args[0] == "--help" {
@@ -90,6 +96,9 @@ func (r *Root) runIn(ctx context.Context, env *Env, path string, cmds []Command,
 			if ue, ok := err.(UsageError); ok {
 				fmt.Fprintf(env.Err, "%s\nusage: %s %s %s\n", ue.Msg, r.Name, p, c.Usage)
 				return 2
+			}
+			if ee, ok := err.(ExitError); ok {
+				return ee.Code
 			}
 			fmt.Fprintf(env.Err, "%s: %v\n", r.Name, err)
 			return 1
